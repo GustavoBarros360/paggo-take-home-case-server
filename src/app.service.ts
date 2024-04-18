@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { createWorker } from 'tesseract.js';
 import { PrismaService } from './prisma.service';
+import { Invoice } from '@prisma/client';
+import { auth } from 'firebase-admin';
+
+type InvoiceUploadParams = {
+  token: string;
+  file: Express.Multer.File;
+};
 
 @Injectable()
 export class AppService {
@@ -13,12 +20,24 @@ export class AppService {
     return 'Hello Paggo';
   }
 
-  async invoiceUpload(file: Express.Multer.File): Promise<{ text: string }> {
+  async invoiceUpload({ file, token }: InvoiceUploadParams): Promise<Invoice> {
+    let decodedToken;
+    try {
+      decodedToken = await auth().verifyIdToken(token);
+    } catch (e) {
+      throw new Error('Credenciais inválidas');
+    }
+    const { uid } = decodedToken;
     const worker = await createWorker('por');
     const response = await worker.recognize(file.buffer);
-    await this.prisma.invoice.create({
-      data: { userId: '123', invoiceSummary: response.data.text },
+    return this.prisma.invoice.create({
+      data: { userId: uid, invoiceSummary: response.data.text },
     });
-    return { text: response.data.text };
+  }
+
+  async getInvoiceById(id: string, userId: string) {
+    return this.prisma.invoice.findUnique({
+      where: { id: Number(id), userId },
+    });
   }
 }
