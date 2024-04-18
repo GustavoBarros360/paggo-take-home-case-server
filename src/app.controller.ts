@@ -25,7 +25,6 @@ export class AppController {
   @Post('/upload-invoice')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
-    return { file };
+    return this.appService.invoiceUpload(file);
   }
 }
