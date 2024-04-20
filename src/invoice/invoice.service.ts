@@ -49,7 +49,7 @@ export class InvoiceService {
       data: {
         userId: uid,
         invoiceSummary: JSON.stringify(processedText),
-        name: file.filename,
+        name: file.originalname,
       },
     });
   }
