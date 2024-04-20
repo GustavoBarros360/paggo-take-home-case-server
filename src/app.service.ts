@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { createWorker } from 'tesseract.js';
 import { PrismaService } from './prisma.service';
 import { Invoice } from '@prisma/client';
 import { auth } from 'firebase-admin';
+import { AWSTextractService } from './aws-textract/aws-textract.service';
 
 type InvoiceUploadParams = {
   token: string;
@@ -11,13 +11,12 @@ type InvoiceUploadParams = {
 
 @Injectable()
 export class AppService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private awsTextract: AWSTextractService,
+  ) {}
   getHello(): string {
     return 'Hello World!';
-  }
-
-  getHelloPaggo(): string {
-    return 'Hello Paggo';
   }
 
   async invoiceUpload({ file, token }: InvoiceUploadParams): Promise<Invoice> {
@@ -28,10 +27,13 @@ export class AppService {
       throw new Error('Credenciais inválidas');
     }
     const { uid } = decodedToken;
-    const worker = await createWorker('por');
-    const response = await worker.recognize(file.buffer);
+
+    const processedText = await this.awsTextract.analyzeInvoice({
+      Document: { Bytes: file.buffer },
+    });
+
     return this.prisma.invoice.create({
-      data: { userId: uid, invoiceSummary: response.data.text },
+      data: { userId: uid, invoiceSummary: JSON.stringify(processedText) },
     });
   }
 
