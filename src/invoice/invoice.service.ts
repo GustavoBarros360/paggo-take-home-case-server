@@ -16,6 +16,9 @@ export class InvoiceService {
     private prisma: PrismaService,
     private awsTextract: AWSTextractService,
   ) {}
+  getAllInvoices(userId: string) {
+    return this.prisma.invoice.findMany({ where: { userId } });
+  }
   async getInvoiceById(id: string, userId: string) {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id: Number(id), userId },
@@ -43,7 +46,11 @@ export class InvoiceService {
     });
 
     return this.prisma.invoice.create({
-      data: { userId: uid, invoiceSummary: JSON.stringify(processedText) },
+      data: {
+        userId: uid,
+        invoiceSummary: JSON.stringify(processedText),
+        name: file.filename,
+      },
     });
   }
 }

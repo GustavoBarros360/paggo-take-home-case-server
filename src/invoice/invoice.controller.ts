@@ -15,6 +15,19 @@ import { InvoiceService } from './invoice.service';
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
+  @Get('/invoices')
+  async getInvoices(@Headers() headers: any) {
+    const token = headers['x-oauth-token'];
+    let decodedToken;
+    try {
+      decodedToken = await auth().verifyIdToken(token);
+    } catch (e) {
+      throw new Error('Credenciais inválidas');
+    }
+    const { uid: userId } = decodedToken;
+    return this.invoiceService.getAllInvoices(userId);
+  }
+
   @Get('/invoice/:id')
   async getInvoice(@Headers() headers: any, @Param('id') id: string) {
     const token = headers['x-oauth-token'];

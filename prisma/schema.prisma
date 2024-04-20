@@ -18,4 +18,5 @@ model Invoice {
   userId         String
   invoiceSummary String?
   invoiceBucket  String?
+  name           String?
 }
